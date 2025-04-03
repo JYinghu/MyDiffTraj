@@ -1,0 +1,10 @@
+torch>=1.7
+pandas
+numpy
+matplotlib
+pathlib
+shutilwhich
+datetime
+colored
+tqdm
+scikit-learn
