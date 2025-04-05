@@ -42,10 +42,10 @@ def main(config, logger, exp_dir):
     # Create the model
     unet = Guide_UNet(config).cuda() # 模型
     # print(unet)
-    traj = np.load('./dataset/normalized_traj_20num.npy',
+    traj = np.load('./dataset/traj_200num.npy',
                    allow_pickle=True)
     traj = traj[:, :, :2] # 只取前两维，即坐标
-    head = np.load('./dataset/normalized_head_10m.npy',
+    head = np.load('./dataset/head_lat16_lon16.npy',
                    allow_pickle=True)
     traj = np.swapaxes(traj, 1, 2) # 交换后两个维度(batch,channel,length)
     traj = torch.from_numpy(traj).float()
