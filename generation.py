@@ -48,17 +48,15 @@ mean = np.array([114.40814661498356,30.45608020694078])
 std = np.array([0.0015514781697125869,0.0014796285727747566])
 # the original mean and std of trajectory length, using for rescaling the trajectory length
 len_mean = 7.617989417989418  # Wuhan
-len_std = 133.75142241258644  # Wuhan
+len_std = 11.565095002315651  # Wuhan
 
 Gen_traj = []
 Gen_head = []
 for i in tqdm(range(1)):
     head = next(iter(dataloader))
     lengths = head[:, 3]
-    print("原长度lengths:", lengths)
     lengths = lengths * len_std + len_mean
     lengths = lengths.int()
-    print("长度lengths:",lengths)
     tes = head[:,:6].numpy()
     Gen_head.extend((tes*hstd+hmean))
     head = head.cuda()
@@ -90,5 +88,7 @@ for i in range(len(Gen_traj)):
     traj = Gen_traj[i]
     plt.plot(traj[:, 0], traj[:, 1], color='blue', alpha=0.1)
 plt.tight_layout()
+plt.title('gen_wkhj_traj')
+plt.grid(True)
 plt.savefig('gen_wkhj_traj.png')
 plt.show()
