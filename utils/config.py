@@ -28,7 +28,7 @@ args = {
     'diffusion': {
         'beta_schedule': 'linear',
         'beta_start': 0.0001, # 噪声比重
-        'beta_end': 0.05,
+        'beta_end': 0.001,
         'num_diffusion_timesteps': 500,
     },
     'training': {

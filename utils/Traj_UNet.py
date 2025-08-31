@@ -11,7 +11,9 @@ def get_timestep_embedding(timesteps, embedding_dim):
         将时间步转换为正弦余弦嵌入，将离散的时间步信息映射到一个连续高维的向量空间
     """
     assert len(timesteps.shape) == 1
-
+    assert torch.all(timesteps >= 0), f"Timesteps contain negative values: {timesteps}"
+    assert torch.all(timesteps < 500), f"Timesteps exceed max value (500): {timesteps.max()}"
+    timesteps = timesteps.long()  # 转换为整数
     half_dim = embedding_dim // 2
     emb = np.log(10000) / (half_dim - 1) # 频率缩放因子
     emb = torch.exp(torch.arange(half_dim, dtype=torch.float32) * -emb) # 频率向量
@@ -337,6 +339,7 @@ class Model(nn.Module):
         self.config = config
         ch, out_ch, ch_mult = config.model.ch, config.model.out_ch, tuple(
             config.model.ch_mult)
+        print(f"self.ch: {ch}")
         num_res_blocks = config.model.num_res_blocks
         attn_resolutions = config.model.attn_resolutions
         dropout = config.model.dropout
@@ -455,6 +458,8 @@ class Model(nn.Module):
         assert x.shape[2] == self.resolution
 
         # timestep embedding 时间步嵌入
+        # print(f"t.shape: {t.shape}")
+        # print(f"t min: {t.min().item()}, t max: {t.max().item()}")
         temb = get_timestep_embedding(t, self.ch) # 时间步嵌入，映射到ch维
         temb = self.temb.dense[0](temb) # 第一层MLP线性变换
         temb = nonlinearity(temb) # swish激活
@@ -546,7 +551,7 @@ if __name__ == '__main__':
     """
     测试Guide_UNet
     """
-    from utils.config_WD import args
+    from utils.config import args
 
     # 将args转换为SimpleNamespace，用于将字典转换为对象，使用.访问属性
     temp = {}

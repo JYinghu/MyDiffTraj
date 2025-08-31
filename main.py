@@ -42,10 +42,10 @@ def main(config, logger, exp_dir):
     # Create the model
     unet = Guide_UNet(config).cuda() # 模型
     # print(unet)
-    traj = np.load('./dataset/traj_200num.npy',
+    traj = np.load('./dataset/traj.npy',
                    allow_pickle=True)
     traj = traj[:, :, :2] # 只取前两维，即坐标
-    head = np.load('./dataset/head_lat16_lon16.npy',
+    head = np.load('./dataset/head.npy',
                    allow_pickle=True)
     traj = np.swapaxes(traj, 1, 2) # 交换后两个维度(batch,channel,length)
     traj = torch.from_numpy(traj).float()
@@ -83,6 +83,7 @@ def main(config, logger, exp_dir):
 
     # config.training.n_epochs = 1
     for epoch in range(1, config.training.n_epochs + 1): # 训练轮数
+        epoch_loss = []  # Store losses for later plotting
         logger.info("<----Epoch-{}---->".format(epoch))
         for _, (trainx, head) in enumerate(dataloader): # 读取数据
             x0 = trainx.cuda()
@@ -98,11 +99,20 @@ def main(config, logger, exp_dir):
             loss = F.mse_loss(noise.float(), pred_noise) # 均方误差损失
             # Store the loss for later viewing
             losses.append(loss.item()) # 存储损失
+            epoch_loss.append(loss.item())
             optim.zero_grad() # 清空梯度
             loss.backward() # 反向传播
             optim.step() # 更新模型权重
             if config.model.ema:
                 ema_helper.update(unet) # 更新EMA
+        logger.info("<----Loss: {:.5f}---->".format(np.mean(epoch_loss)))
+        # 打印每轮损失
+        avg_loss = np.mean(losses)
+        info = f"Epoch [{epoch + 1}/{config.training.n_epochs}], Loss: {avg_loss:.4f}"
+        # 将 info 写入 loss.txt 文件
+        with open(loss_path, 'a') as f:
+            f.write(info + '\n')
+
         if (epoch) % 10 == 0: # 每10轮保存一次模型
             m_path = model_save / f"unet_{epoch}.pt"
             torch.save(unet.state_dict(), m_path)
@@ -128,6 +138,8 @@ if __name__ == "__main__":
     for d in ["results", "models", "logs","Files"]:
         os.makedirs(exp_dir / d, exist_ok=True)
     print("All files saved path ---->>", exp_dir)
+    loss_path = exp_dir / 'models' / 'loss.txt'
+
     # 备份代码
     timestamp = datetime.datetime.now().strftime("%m-%d-%H-%M-%S")
     files_save = exp_dir / 'Files' / (timestamp + '/')

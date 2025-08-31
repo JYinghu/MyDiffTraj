@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 from torch.utils.data import DataLoader
 from tqdm.notebook import tqdm
 
@@ -17,7 +18,7 @@ unet = Guide_UNet(config).cuda()
 prePath = '/home/hjy/DiffTraj'
 # prePath = 'D:/MyProjects/PythonAbout/DiffusionModel/DiffTraj'
 unet.load_state_dict(
-    torch.load(prePath+'/DiffTraj/Wuhan_steps=500_len=200_0.05_bs=32/models/04-05-13-38-11/unet_200.pt'))
+    torch.load(prePath+'/DiffTraj/Wuhan_steps=500_len=200_0.05_bs=32/models/04-06-19-13-50/unet_180.pt'))
 
 # %%
 n_steps = config.diffusion.num_diffusion_timesteps
@@ -34,21 +35,21 @@ seq = range(0, n_steps, skip)
 
 # load head information for guide trajectory generation
 batchsize = 500
-head = np.load('./dataset/head_lat16_lon16.npy',
+head = np.load('dataset/head_lat16_lon16.npy',
                allow_pickle=True)
 head = torch.from_numpy(head).float()
 dataloader = DataLoader(head, batch_size=batchsize, shuffle=True, num_workers=0)
 
 
 # the mean and std of head information, using for rescaling
-hmean = [0,105.96585267360813,274.78201058201057,7.617989417989418,18.560685945370466,3.5673982428933195]
-hstd = [1,218.00241542172074,328.1221270478287,11.565095002315651,15.309060366633098,9.608857778062685]
+hmean = [0,116.87192154692256,8299.930162552679,21.31005418422637,8.66673271499384,0.22034542712971672]
+hstd = [1,319.88159197073,11643.630572869386,118.66998066873354,11.375444704159696,1.1671275986022498]
 
-mean = np.array([114.40814661498356,30.45608020694078])
-std = np.array([0.0015514781697125869,0.0014796285727747566])
+mean = np.array([114.40815562100842,30.456079474774274])
+std = np.array([0.001550441880006359,0.0014920193948092162])
 # the original mean and std of trajectory length, using for rescaling the trajectory length
-len_mean = 7.617989417989418  # Wuhan
-len_std = 11.565095002315651  # Wuhan
+len_mean = 7.6563997262149215  # Wuhan
+len_std = 11.528600647824929  # Wuhan
 
 Gen_traj = []
 Gen_head = []
@@ -92,3 +93,26 @@ plt.title('gen_wkhj_traj')
 plt.grid(True)
 plt.savefig('gen_wkhj_traj.png')
 plt.show()
+
+
+# Save Gen_traj to CSV
+def save_trajectories_to_csv(trajectories, output_file='generated_trajectories.csv'):
+    """
+    Save generated trajectories to a CSV file in the format: id,lon,lat.
+
+    Parameters:
+    - trajectories: List of trajectories, each a NumPy array of shape (n_points, 2).
+    - output_file: Path to save the CSV file.
+    """
+    data = []
+    for traj_id, traj in enumerate(trajectories, 1):  # Start ID from 1
+        for lon, lat in traj:
+            data.append([traj_id, lon, lat])
+
+    df = pd.DataFrame(data, columns=['id', 'lon', 'lat'])
+    df.to_csv(output_file, index=False)
+    print(f"Trajectories saved to {output_file}")
+
+
+# Save the generated trajectories
+save_trajectories_to_csv(Gen_traj)
